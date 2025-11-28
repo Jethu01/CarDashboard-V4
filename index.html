@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Car Dashboard — Music & Maps (Final)</title>
+<style>
+  :root{
+    --bg:#0f1114;
+    --card:#121416;
+    --accent:#1c73d1;
+    --muted:#9aa4b5;
+    --glass: rgba(255,255,255,0.03);
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#071022);color:#eaf0fb}
+  .app{max-width:1200px;margin:14px auto;padding:14px;display:grid;grid-template-columns:520px 1fr;gap:14px}
+  .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+  .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .title{font-weight:700;font-size:18px}
+  .small{font-size:13px;color:var(--muted)}
+  /* left column (music) */
+  .music-hero{display:flex;gap:14px;align-items:center}
+  .cover{width:220px;height:220px;border-radius:12px;overflow:hidden;flex-shrink:0;background:#000}
+  .cover img{width:100%;height:100%;object-fit:cover;display:block}
+  .music-info{flex:1;display:flex;flex-direction:column;gap:8px}
+  .track-title{font-size:20px;font-weight:700}
+  .track-sub{color:var(--muted);font-size:14px}
+  .player-frame{width:100%;height:120px;border-radius:10px;overflow:hidden;border:0}
+  .playlist-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .pl-item{display:flex;gap:10px;align-items:center}
+  .pl-thumb{width:48px;height:48px;border-radius:6px;overflow:hidden;background:#000;flex-shrink:0}
+  .pl-thumb img{width:100%;height:100%;object-fit:cover}
+  .pl-meta{flex:1}
+  .link-btn{background:var(--glass);border:1px solid rgba(255,255,255,0.04);padding:8px 10px;border-radius:8px;color:var(--muted);text-decoration:none;font-weight:600;display:inline-block}
+  .link-btn.primary{background:var(--accent);color:#022;border:none}
+  /* right column (map + search) */
+  .map-top{height:54vh;display:flex;flex-direction:column;gap:8px}
+  .map-frame{flex:1;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.03)}
+  input, select{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;width:100%}
+  .controls{display:flex;gap:8px;align-items:center}
+  .controls .btn{padding:10px 12px;border-radius:8px;border:none;background:var(--glass);color:var(--muted);cursor:pointer;font-weight:700}
+  .controls .btn.primary{background:var(--accent);color:#022}
+  .note{font-size:13px;color:var(--muted);margin-top:8px}
+  @media(max-width:980px){.app{grid-template-columns:1fr;padding:10px}.cover{width:140px;height:140px}.map-top{height:300px}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- LEFT: Music -->
+  <div class="card">
+    <div class="header">
+      <div>
+        <div class="title">Car Dashboard</div>
+        <div class="small">Music & Maps — Player mit Cover</div>
+      </div>
+      <div class="small" id="time">--:--</div>
+    </div>
+
+    <div class="music-hero">
+      <div class="cover" id="coverBox">
+        <img id="coverImg" src="https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/ab/fc/ee/abfcee97-a867-63db-01c5-003c30e1a094/196871233996.jpg/600x600bb.jpg" alt="Cover">
+      </div>
+      <div class="music-info">
+        <div id="playlistTitle" class="track-title">Driving Energy</div>
+        <div id="playlistArtist" class="track-sub">Apple Music Playlist</div>
+
+        <!-- embed player (first playlist by default) -->
+        <iframe id="player" class="player-frame" allow="autoplay *; encrypted-media *;" 
+          src="https://embed.music.apple.com/de/playlist/p.6xZagvduY2lzzPx"></iframe>
+
+        <div class="note">Tipp: Nutze die Buttons unten, um die Playlist in Apple Music App zu öffnen (für erweiterte Suche/Steuerung).</div>
+      </div>
+    </div>
+
+    <div class="playlist-list" id="playlistList">
+      <!-- playlist items populated by JS -->
+    </div>
+  </div>
+
+  <!-- RIGHT: Map -->
+  <div>
+    <div class="card map-top">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:700">Google Maps</div>
+        <div class="small">Gib Ziel ein und starte Navigation</div>
+      </div>
+
+      <div class="card" style="padding:10px;">
+        <input id="destInput" type="text" placeholder="Adresse eingeben (z.B. Münchener Str. 1, Köln)">
+        <div style="height:8px"></div>
+        <div class="controls">
+          <button class="btn primary" id="openRouteBtn">Route in Maps öffnen</button>
+          <button class="btn" id="openNavBtn">Navigation starten</button>
+          <button class="btn" id="geoBtn">Meine Position</button>
+        </div>
+        <div class="note">Hinweis: Auf dem Handy öffnen die Buttons die Google Maps App (bessere Navigation).</div>
+      </div>
+
+      <div class="map-frame" id="mapFrame">
+        <iframe id="embedMap" width="100%" height="100%" frameborder="0"
+          src="https://www.google.com/maps?q=K%C3%B6ln+Neumarkt&output=embed"></iframe>
+      </div>
+    </div>
+
+    <!-- bottom-right: search & extra -->
+    <div class="card" style="margin-top:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:700">Musik-Suche</div>
+        <div class="small">Öffnet Apple Music Suche</div>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <input id="musicSearch" type="text" placeholder="Song / Artist / Album suchen">
+        <button class="btn primary" id="musicSearchBtn" style="padding:10px 12px">Suchen</button>
+      </div>
+
+      <div style="margin-top:12px" class="note">Tipp: Apple Music Web öffnet die vollständigen Suchergebnisse — Anmeldung kann erforderlich.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const playlists = [
+  {
+    id: 'p.6xZagvduY2lzzPx',
+    title: 'Driving Energy',
+    desc: 'Playlist 1',
+    cover: 'https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/ab/fc/ee/abfcee97-a867-63db-01c5-003c30e1a094/196871233996.jpg/600x600bb.jpg',
+    url: 'https://music.apple.com/library/playlist/p.6xZagvduY2lzzPx'
+  },
+  {
+    id: 'p.ZOAX7ERHvWdKKVr',
+    title: 'Playlist 2',
+    desc: 'Apple Music',
+    cover: 'https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/8d/57/33/8d5733d5-8aa3-dd68-86b0-515a12f90b43/600x600bb.jpg',
+    url: 'https://music.apple.com/library/playlist/p.ZOAX7ERHvWdKKVr'
+  },
+  {
+    id: 'p.ZOAX7bbIvWdKKVr',
+    title: 'Playlist 3',
+    desc: 'Apple Music',
+    cover: 'https://is2-ssl.mzstatic.com/image/thumb/Music126/v4/2b/1e/3d/2b1e3d3b-7fbe-6e2e-8b67-9d8b6a1f9c2c/cover.jpg/600x600bb.jpg',
+    url: 'https://music.apple.com/library/playlist/p.ZOAX7bbIvWdKKVr'
+  }
+];
+
+// render playlist list
+const listEl = document.getElementById('playlistList');
+playlists.forEach((p, idx)=>{
+  const item = document.createElement('div');
+  item.className = 'pl-item';
+  item.innerHTML = `
+    <div class="pl-thumb"><img src="${p.cover}" alt=""></div>
+    <div class="pl-meta"><div style="font-weight:700">${p.title}</div><div class="small">${p.desc}</div></div>
+    <div style="display:flex;gap:8px">
+      <a class="link-btn" href="${p.url}" target="_blank" rel="noopener">Öffnen</a>
+      <button class="link-btn primary" data-idx="${idx}">Laden</button>
+    </div>
+  `;
+  listEl.appendChild(item);
+});
+
+// load playlist into player
+function loadPlaylist(idx){
+  const p = playlists[idx];
+  document.getElementById('coverImg').src = p.cover;
+  document.getElementById('playlistTitle').textContent = p.title;
+  document.getElementById('playlistArtist').textContent = p.desc;
+  document.getElementById('player').src = 'https://embed.music.apple.com/de/playlist/' + p.id;
+}
+document.querySelectorAll('.link-btn.primary').forEach(btn=>{
+  btn.addEventListener('click', ()=> loadPlaylist(parseInt(btn.dataset.idx)));
+});
+
+// time
+function updateTime(){ document.getElementById('time').textContent = new Date().toLocaleTimeString(); }
+setInterval(updateTime,1000); updateTime();
+
+// maps buttons
+document.getElementById('openRouteBtn').addEventListener('click', ()=>{
+  const dest = document.getElementById('destInput').value.trim();
+  if(!dest){ alert('Bitte Zieladresse eingeben'); return; }
+  const url = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(dest) + '&travelmode=driving';
+  window.open(url, '_blank');
+});
+document.getElementById('openNavBtn').addEventListener('click', ()=>{
+  const dest = document.getElementById('destInput').value.trim();
+  if(!dest){ alert('Bitte Zieladresse eingeben'); return; }
+  const url = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(dest) + '&travelmode=driving';
+  window.open(url, '_blank');
+});
+document.getElementById('geoBtn').addEventListener('click', ()=>{
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const lat = pos.coords.latitude, lon = pos.coords.longitude;
+      document.getElementById('embedMap').src = 'https://www.google.com/maps?q=' + lat + ',' + lon + '&output=embed';
+    }, err=> alert('Position konnte nicht ermittelt werden: ' + err.message), {timeout:10000});
+  } else alert('Geolocation nicht verfügbar');
+});
+
+// music search
+document.getElementById('musicSearchBtn').addEventListener('click', ()=>{
+  const q = document.getElementById('musicSearch').value.trim();
+  if(!q){ alert('Bitte Suchbegriff eingeben'); return; }
+  const url = 'https://music.apple.com/search?term=' + encodeURIComponent(q);
+  window.open(url, '_blank');
+});
+</script>
+</body>
+</html>
